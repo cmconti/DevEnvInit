@@ -147,6 +147,12 @@ SET INSTALL_=
 set /p INSTALL_="Install/Upgrade Git in %ProgramFiles%\Git ? [y/n]"
 if /I "%INSTALL_:~0,1%" NEQ "y" Goto GitConfigure
 
+tasklist /FI "IMAGENAME eq wish.exe" 2>NUL | find /I /N "wish.exe">NUL
+if "%ERRORLEVEL%"=="0" echo gitk is running...please close
+
+tasklist /FI "IMAGENAME eq git.exe" 2>NUL | find /I /N "git.exe">NUL
+if "%ERRORLEVEL%"=="0" echo git is running...please close
+
 choco upgrade git --params="'%GIT_OPT%'" -y
 
 REM Add to current path
