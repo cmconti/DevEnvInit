@@ -217,6 +217,8 @@ if /I "%INSTALL_:~0,1%" NEQ "y" Goto GitConfigureLogAndColor
 git config --global diff.tool p4
 git config --global merge.tool p4
 
+rem todo:  C:\Users\Admin\.config\git\gitk  update set extdifftool meld to set extdifftool p4merge
+
 :GitConfigureLogAndColor
 echo.
 SET INSTALL_=
@@ -231,6 +233,8 @@ git config --global color.status.changed "red bold"
 git config --global color.status.untracked "red bold"
 git config --global color.status.added "green bold"
 git config --global color.branch.remote "red bold"
+
+rem todo:  C:\Users\Admin\.config\git\gitk  update set permviews {} to set permviews {{{First Parent} {} --first-parent {}}}
 
 :GitConfigureCerts
 echo.
