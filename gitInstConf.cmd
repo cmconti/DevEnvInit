@@ -147,11 +147,13 @@ SET INSTALL_=
 set /p INSTALL_="Install/Upgrade Git in %ProgramFiles%\Git ? [y/n]"
 if /I "%INSTALL_:~0,1%" NEQ "y" Goto GitConfigure
 
+:retryWish
 tasklist /FI "IMAGENAME eq wish.exe" 2>NUL | find /I /N "wish.exe">NUL
-if "%ERRORLEVEL%"=="0" echo gitk is running...please close
+if "%ERRORLEVEL%"=="0" echo gitk is running...please close&pause&goto retryWish
 
+:retryGit
 tasklist /FI "IMAGENAME eq git.exe" 2>NUL | find /I /N "git.exe">NUL
-if "%ERRORLEVEL%"=="0" echo git is running...please close
+if "%ERRORLEVEL%"=="0" echo git is running...please close&pause&goto retryGit
 
 choco upgrade git --params="'%GIT_OPT%'" -y
 
@@ -217,7 +219,14 @@ if /I "%INSTALL_:~0,1%" NEQ "y" Goto GitConfigureLogAndColor
 git config --global diff.tool p4
 git config --global merge.tool p4
 
-rem todo:  C:\Users\Admin\.config\git\gitk  update set extdifftool meld to set extdifftool p4merge
+rem todo:  C:\Users\Admin\.config\git\gitk  update set extdifftool meld to set extdifftool p4merge- handle fresh install or missing setting
+if exist "%USERPROFILE%\.config\git\gitk" (
+    FOR /f %%a in ('WMIC OS GET LocalDateTime ^| find "."') DO (set DTS=%%a&set CUR_DATE=%DTS:~0,8%T%DTS:~8,6%)
+    echo copy "%USERPROFILE%\.config\git\gitk" "%USERPROFILE%\.config\git\gitk_%CUR_DATE%.bak"
+    copy "%USERPROFILE%\.config\git\gitk" "%USERPROFILE%\.config\git\gitk_%CUR_DATE%.bak"
+
+    powershell "$file = '%USERPROFILE%\.config\git\gitk';(gc $file) -replace '^set extdifftool .*$','set extdifftool p4merge' -replace '^set diffcontext .*$','set diffcontext 6' | sc -Encoding ASCII $file
+)
 
 :GitConfigureLogAndColor
 echo.
@@ -234,7 +243,13 @@ git config --global color.status.untracked "red bold"
 git config --global color.status.added "green bold"
 git config --global color.branch.remote "red bold"
 
-rem todo:  C:\Users\Admin\.config\git\gitk  update set permviews {} to set permviews {{{First Parent} {} --first-parent {}}}
+rem todo:  C:\Users\Admin\.config\git\gitk  update set permviews {} to set permviews {{{First Parent} {} --first-parent {}}}- handle fresh install or missing/different setting
+if exist "%USERPROFILE%\.config\git\gitk" (
+    FOR /f %%a in ('WMIC OS GET LocalDateTime ^| find "."') DO (set DTS=%%a&set CUR_DATE=%DTS:~0,8%T%DTS:~8,6%)
+    copy "%USERPROFILE%\.config\git\gitk" "%USERPROFILE%\.config\git\gitk_%CUR_DATE%.bak"
+
+    powershell "$file = '%USERPROFILE%\.config\git\gitk';(gc $file) -replace '^set permviews {}$','set permviews {{{First Parent} {} --first-parent {}}}' | sc -Encoding ASCII $file
+)
 
 :GitConfigureCerts
 echo.
@@ -462,6 +477,20 @@ powershell -ExecutionPolicy Unrestricted -Command "& '%~dp0\pscolor.ps1' '%USERP
 copy "%USERPROFILE%\Desktop\PoshGitShell.lnk" "%APPDATA%\Microsoft\Internet Explorer\Quick Launch"
 rem todo admin poshgitshell (and update profile.example.ps1?)
 Goto Done
+
+rem todo: add this:
+rem {
+rem     // posh-git.
+rem     "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44be}",
+rem     "name": "PoshGitShell",
+rem     "commandline": "powershell.exe -NoExit -ExecutionPolicy Unrestricted -File \"C:\\Tools\\poshgit\\dahlbyk-posh-git-9bda399\\profile.example.ps1\" choco",
+rem     "hidden": false,
+rem     "icon" : "C:\\github-personal\\DevEnvInit\\poshgit.ico",
+rem     "startingDirectory" : "C:\\github-personal",
+rem     "colorScheme": "Campbell Powershell"
+rem },
+rem to %LOCALAPPDATA%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json
+rem while retaining comments (and whitespace?)
 
 ::UtilityFunctions
 
