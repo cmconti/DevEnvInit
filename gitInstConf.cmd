@@ -221,9 +221,9 @@ git config --global merge.tool p4
 
 rem todo:  C:\Users\Admin\.config\git\gitk  update set extdifftool meld to set extdifftool p4merge- handle fresh install or missing setting
 if exist "%USERPROFILE%\.config\git\gitk" (
-    FOR /f %%a in ('WMIC OS GET LocalDateTime ^| find "."') DO (set DTS=%%a&set CUR_DATE=%DTS:~0,8%T%DTS:~8,6%)
-    echo copy "%USERPROFILE%\.config\git\gitk" "%USERPROFILE%\.config\git\gitk_%CUR_DATE%.bak"
-    copy "%USERPROFILE%\.config\git\gitk" "%USERPROFILE%\.config\git\gitk_%CUR_DATE%.bak"
+    FOR /f %%a in ('WMIC OS GET LocalDateTime ^| find "."') DO (set DTS=%%a&set CUR_DATE=!DTS:~0,8!T!DTS:~8,6!)
+    echo copy "%USERPROFILE%\.config\git\gitk" "%USERPROFILE%\.config\git\gitk_!CUR_DATE!.bak"
+    powershell "copy "%USERPROFILE%\.config\git\gitk" "%USERPROFILE%\.config\git\gitk_!CUR_DATE!.bak""
 
     powershell "$file = '%USERPROFILE%\.config\git\gitk';(gc $file) -replace '^set extdifftool .*$','set extdifftool p4merge' -replace '^set diffcontext .*$','set diffcontext 6' | sc -Encoding ASCII $file
 )
@@ -245,8 +245,9 @@ git config --global color.branch.remote "red bold"
 
 rem todo:  C:\Users\Admin\.config\git\gitk  update set permviews {} to set permviews {{{First Parent} {} --first-parent {}}}- handle fresh install or missing/different setting
 if exist "%USERPROFILE%\.config\git\gitk" (
-    FOR /f %%a in ('WMIC OS GET LocalDateTime ^| find "."') DO (set DTS=%%a&set CUR_DATE=%DTS:~0,8%T%DTS:~8,6%)
-    copy "%USERPROFILE%\.config\git\gitk" "%USERPROFILE%\.config\git\gitk_%CUR_DATE%.bak"
+    FOR /f %%a in ('WMIC OS GET LocalDateTime ^| find "."') DO (set DTS=%%a&set CUR_DATE=!DTS:~0,8!T!DTS:~8,6!)
+    echo copy "%USERPROFILE%\.config\git\gitk" "%USERPROFILE%\.config\git\gitk_!CUR_DATE!.bak"
+    powershell "copy "%USERPROFILE%\.config\git\gitk" "%USERPROFILE%\.config\git\gitk_!CUR_DATE!.bak""
 
     powershell "$file = '%USERPROFILE%\.config\git\gitk';(gc $file) -replace '^set permviews {}$','set permviews {{{First Parent} {} --first-parent {}}}' | sc -Encoding ASCII $file
 )
