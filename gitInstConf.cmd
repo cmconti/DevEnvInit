@@ -242,6 +242,8 @@ git config --global color.status.changed "red bold"
 git config --global color.status.untracked "red bold"
 git config --global color.status.added "green bold"
 git config --global color.branch.remote "red bold"
+git config --global color.diff.new "green bold"
+git config --global color.diff.old "red bold"
 
 rem todo:  C:\Users\Admin\.config\git\gitk  update set permviews {} to set permviews {{{First Parent} {} --first-parent {}}}- handle fresh install or missing/different setting
 if exist "%USERPROFILE%\.config\git\gitk" (
