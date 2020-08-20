@@ -435,18 +435,17 @@ if "%PROF_EXISTS%" EQU "0" (
 rem tweak some posh-git prompt colors to improve readaility (IMHO)
 > "%~dp0\tmpCustomInstall.ps1" (
 echo function insert-line($file, $line, $match, $after^) {
-echo     $fc = gc $file;
-echo     $alreadydone = $fc ^| %%{$_ -match $match};
-echo     If($alreadydone -contains $false^){
-echo         $idx=($fc^|sls $after^).LineNumber;
-echo         $newfc=@(^);
+echo     $fc = gc $file
+echo     If (-not (sls -Path $file -Pattern $match -Quiet^)^) {
+echo         $idx=($fc^|sls $after^).LineNumber
+echo         $newfc=@(^)
 echo         0..($fc.Count-1^)^|%%{
 echo             if ($_ -eq $idx^){
-echo                 $newfc +=$line;
+echo                 $newfc +=$line
 echo             }
-echo             $newfc += $fc[$_];
+echo             $newfc += $fc[$_]
 echo         }
-echo         $newfc ^| out-file $file;
+echo         $newfc ^| out-file $file
 echo     }
 echo }
 echo $file = (gci '%CONF_CHOCO_TOOLS%\poshgit\dahlbyk-posh-git*\profile.example.ps1'^).FullName;
