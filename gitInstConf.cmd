@@ -238,12 +238,14 @@ REM Git Log and color settings
 git config --global alias.lg "log --graph --pretty=format:'%%C(red bold)%%h%%Creset -%%C(yellow bold)%%d%%Creset %%s%%Cgreen(%%cr) %%C(cyan)<%%an>%%Creset' --abbrev-commit --date=relative"
 git config --global alias.lg2 "log --graph --pretty=format:'%%C(red bold)%%h%%Creset -%%C(blue bold)%%d%%Creset %%s%%Cgreen(%%cr) %%C(cyan)<%%an>%%Creset'"
 git config --global alias.lg3 "log --graph --pretty=format:'%%C(red bold)%%h%%Creset -%%C(yellow bold)%%d%%Creset %%s%%C(cyan)<%%an>%%Creset'"
-git config --global color.status.changed "red bold"
-git config --global color.status.untracked "red bold"
-git config --global color.status.added "green bold"
 git config --global color.branch.remote "red bold"
 git config --global color.diff.new "green bold"
 git config --global color.diff.old "red bold"
+git config --global color.status.changed "red bold"
+git config --global color.status.untracked "red bold"
+git config --global color.status.added "green bold"
+git config --global color.status.localBranch "green bold"
+git config --global color.status.remoteBranch "red bold"
 
 rem todo:  C:\Users\Admin\.config\git\gitk  update set permviews {} to set permviews {{{First Parent} {} --first-parent {}}}- handle fresh install or missing/different setting
 if exist "%USERPROFILE%\.config\git\gitk" (
