@@ -257,6 +257,8 @@ if exist "%USERPROFILE%\.config\git\gitk" (
 )
 
 :GitConfigureCerts
+REM skip reconfiguring certs.  Ass-u-me git is already configured for schannel
+goto GitPad
 echo.
 SET INSTALL_=
 set /p INSTALL_="Use OpenSSL and refresh CA cert bundle with certs from the windows cert store ? [y/n]"
@@ -348,8 +350,15 @@ copy Gitpad.exe "%PROGRAMDATA%\GitPad"
 REM Add to current path
 SET PATH=%PATH%;%PROGRAMDATA%\GitPad
 
-powershell -Command "$regKey = [Microsoft.Win32.Registry]::LocalMachine.OpenSubKey('SYSTEM\CurrentControlSet\Control\Session Manager\Environment', $true);$oldpath = $regKey.GetValue('Path', '', [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames);$pathvals = $oldpath -split ';';if ($pathvals -notlike '*programdata*gitpad'){$newpath=$oldpath + ';%%PROGRAMDATA%%\GitPad';$newpath=$newpath -replace ';;',';';$regKey.SetValue('Path', $newpath, [Microsoft.Win32.RegistryValueKind]::ExpandString)}"
-
+powershell  -Command !="^"!^
+    $regKey = [Microsoft.Win32.Registry]::LocalMachine.OpenSubKey('SYSTEM\CurrentControlSet\Control\Session Manager\Environment', $true);^
+    $oldpath = $regKey.GetValue('Path', '', [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames);^
+    $pathvals = $oldpath -split ';';^
+    if (($pathvals ^| %%{$_ -like '*programdata*gitpad'}) -notcontains $true) {^
+        $newpath=$oldpath + ';%%PROGRAMDATA%%\GitPad';^
+        $newpath=$newpath -replace ';;',';';^
+        $regKey.SetValue('Path', $newpath, [Microsoft.Win32.RegistryValueKind]::ExpandString)^
+    }"
 
 call :broadcastSettingsChange
 
