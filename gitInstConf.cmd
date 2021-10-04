@@ -172,7 +172,8 @@ if /I "%INSTALL_:~0,1%" NEQ "y" Goto GitConfigureDefaultUser
 REM Set some default git options
 git config --system diff.algorithm histogram
 git config --system difftool.prompt false
-git config --system difftool.bc4.cmd "\"c:/program files (x86)/beyond compare 3/bcomp.exe\" \"$LOCAL\" \"$REMOTE\""
+git config --system difftool.bc4.cmd "\"c:/Program Files/Beyond Compare 4/bcomp.exe\" \"$LOCAL\" \"$REMOTE\""
+git config --system difftool.bc4dir.cmd "\"c:/Program Files/Beyond Compare 4/BCompare.exe\" -ro -expandall -solo \"$LOCAL\" \"$REMOTE\""
 git config --system difftool.p4.cmd "\"c:/program files/Perforce/p4merge.exe\" \"$LOCAL\" \"$REMOTE\""
 git config --system difftool.vs2012.cmd "\"c:/program files (x86)/microsoft visual studio 11.0/common7/ide/devenv.exe\" '//diff' \"$LOCAL\" \"$REMOTE\""
 git config --system difftool.vs2013.cmd "\"c:/program files (x86)/microsoft visual studio 12.0/common7/ide/devenv.exe\" '//diff' \"$LOCAL\" \"$REMOTE\""
@@ -183,6 +184,8 @@ git config --system mergetool.bc3.cmd "\"c:/program files (x86)/beyond compare 3
 git config --system mergetool.bc3.trustexitcode true
 git config --system mergetool.p4.cmd "\"c:/program files/Perforce/p4merge.exe\" \"$BASE\" \"$LOCAL\" \"$REMOTE\" \"$MERGED\""
 git config --system mergetool.p4.trustexitcode false
+
+git config --global alias.diffdir "difftool --dir-diff --tool=bc4dir --no-prompt"
 
 :GitConfigureDefaultUser
 if "%CONF_GIT_DEFAULT_USER%" EQU "" Goto :GitConfigureSecondaryUser
