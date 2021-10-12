@@ -174,6 +174,7 @@ git config --system diff.algorithm histogram
 git config --system difftool.prompt false
 git config --system difftool.bc4.cmd "\"c:/Program Files/Beyond Compare 4/bcomp.exe\" \"$LOCAL\" \"$REMOTE\""
 git config --system difftool.bc4dir.cmd "\"c:/Program Files/Beyond Compare 4/BCompare.exe\" -ro -expandall -solo \"$LOCAL\" \"$REMOTE\""
+git config --system difftool.bc4diredit.cmd "\"c:/Program Files/Beyond Compare 4/BCompare.exe\" -lro -expandall -solo \"$LOCAL\" \"$REMOTE\""
 git config --system difftool.p4.cmd "\"c:/program files/Perforce/p4merge.exe\" \"$LOCAL\" \"$REMOTE\""
 git config --system difftool.vs2012.cmd "\"c:/program files (x86)/microsoft visual studio 11.0/common7/ide/devenv.exe\" '//diff' \"$LOCAL\" \"$REMOTE\""
 git config --system difftool.vs2013.cmd "\"c:/program files (x86)/microsoft visual studio 12.0/common7/ide/devenv.exe\" '//diff' \"$LOCAL\" \"$REMOTE\""
@@ -186,6 +187,7 @@ git config --system mergetool.p4.cmd "\"c:/program files/Perforce/p4merge.exe\" 
 git config --system mergetool.p4.trustexitcode false
 
 git config --global alias.diffdir "difftool --dir-diff --tool=bc4dir --no-prompt"
+git config --global alias.diffdirsym "-c core.symlinks=true difftool --dir-diff --tool=bc4diredit --no-prompt"
 
 :GitConfigureDefaultUser
 if "%CONF_GIT_DEFAULT_USER%" EQU "" Goto :GitConfigureSecondaryUser
