@@ -246,10 +246,21 @@ git config --global alias.lg3 "log --graph --pretty=format:'%%C(red bold)%%h%%Cr
 git config --global color.branch.remote "red bold"
 git config --global color.diff.new "green bold"
 git config --global color.diff.old "red bold"
-git config --global color.status.changed "red bold"
-git config --global color.status.untracked "red bold"
+::status colors:
+::see https://github.com/git/git/blob/master/wt-status.h, https://github.com/git/git/blob/master/wt-status.c, https://github.com/git/git/blob/master/builtin/commit.c
+::WT_STATUS_UPDATED 'added' or 'updated'
 git config --global color.status.added "green bold"
+::WT_STATUS_CHANGED
+git config --global color.status.changed "red bold"
+::WT_STATUS_UNTRACKED
+git config --global color.status.untracked "red bold"
+::WT_STATUS_NOBRANCH
+git config --global color.status.nobranch "red bold"
+::WT_STATUS_UNMERGED
+git config --global color.status.unmerged "red bold"
+::WT_STATUS_LOCAL_BRANCH
 git config --global color.status.localBranch "green bold"
+::WT_STATUS_REMOTE_BRANCH
 git config --global color.status.remoteBranch "red bold"
 
 rem todo:  C:\Users\Admin\.config\git\gitk  update set permviews {} to set permviews {{{First Parent} {} --first-parent {}}}- handle fresh install or missing/different setting
