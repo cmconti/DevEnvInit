@@ -505,6 +505,7 @@ powershell -ExecutionPolicy Unrestricted -Command "& '%~dp0\pscolor.ps1' '%USERP
 
 copy "%USERPROFILE%\Desktop\PoshGitShell.lnk" "%APPDATA%\Microsoft\Internet Explorer\Quick Launch"
 rem todo admin poshgitshell (and update profile.example.ps1?)
+rem C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoExit -ExecutionPolicy Unrestricted -Command "cd c:\github-personal; C:\Tools\poshgit\dahlbyk-posh-git-9bda399\profile.example.ps1 choco"
 Goto Done
 
 rem todo: add this:
