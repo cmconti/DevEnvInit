@@ -52,6 +52,9 @@ SET INSTALL_=
 set /p INSTALL_="Install winmerge ? [y/n]"
 if /I "%INSTALL_:~0,1%" NEQ "y" Goto notepad2
 choco upgrade winmerge -y
+
+goto notepad3
+
 :notepad2
 SET INSTALL_=
 set /p INSTALL_="Install notepad2 ? [y/n]"
@@ -71,10 +74,15 @@ if /I "%INSTALL_:~0,1%" NEQ "y" Goto Done
 choco upgrade notepad3 -y
 
 :::: configure
-UpdateINI -s Settings SaveRecentFiles 1 "%APPDATA%\Rizonesoft\Notepad3\Notepad3.ini"
-UpdateINI -s Settings SaveFindReplace 1 "%APPDATA%\Rizonesoft\Notepad3\Notepad3.ini"
-UpdateINI -s Settings TabsAsSpaces 1 "%APPDATA%\Rizonesoft\Notepad3\Notepad3.ini"
-UpdateINI -s Settings ViewWhiteSpace 1 "%APPDATA%\Rizonesoft\Notepad3\Notepad3.ini"
+UpdateINI -s Settings SaveRecentFiles true "%APPDATA%\Rizonesoft\Notepad3\Notepad3.ini"
+UpdateINI -s Settings SaveFindReplace true "%APPDATA%\Rizonesoft\Notepad3\Notepad3.ini"
+UpdateINI -s Settings TabsAsSpaces true "%APPDATA%\Rizonesoft\Notepad3\Notepad3.ini"
+UpdateINI -s Settings ViewWhiteSpace true "%APPDATA%\Rizonesoft\Notepad3\Notepad3.ini"
+UpdateINI -s Settings SaveBeforeRunningTools true "%APPDATA%\Rizonesoft\Notepad3\Notepad3.ini"
+UpdateINI -s Settings RegExprSearch false "%APPDATA%\Rizonesoft\Notepad3\Notepad3.ini"
+UpdateINI -s Settings efrData_fuFlags 2097152 "%APPDATA%\Rizonesoft\Notepad3\Notepad3.ini"
+UpdateINI -s Settings FileWatchingMode 1 "%APPDATA%\Rizonesoft\Notepad3\Notepad3.ini"
+UpdateINI -s Settings ResetFileWatching false "%APPDATA%\Rizonesoft\Notepad3\Notepad3.ini"
 
 goto Done
 
