@@ -137,6 +137,8 @@ echo.
 echo Checking if git is installed...
 choco outdated | find /i "git.install|"
 if not errorlevel 1 (goto GitInstall)
+choco outdated | find /i "git|"
+if not errorlevel 1 (goto GitInstall)
 
 git --version > NUL
 if NOT ERRORLEVEL 1 GOTO GitConfigure
