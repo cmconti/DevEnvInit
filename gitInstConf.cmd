@@ -188,6 +188,7 @@ git config --system mergetool.bc3.trustexitcode true
 git config --system mergetool.p4.cmd "\"c:/program files/Perforce/p4merge.exe\" \"$BASE\" \"$LOCAL\" \"$REMOTE\" \"$MERGED\""
 git config --system mergetool.p4.trustexitcode false
 
+git config --global --add safe.directory '*'
 git config --global alias.diffdir "difftool --dir-diff --tool=bc4dir --no-prompt"
 git config --global alias.diffdirsym "-c core.symlinks=true difftool --dir-diff --tool=bc4diredit --no-prompt"
 
