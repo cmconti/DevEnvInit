@@ -5,6 +5,54 @@ function Test-AdminElevation {
   return $principal.IsInRole( [System.Security.Principal.WindowsBuiltInRole]::Administrator )
 }
 
+#Set things up for PowerShellGet
+function prepForPSModule {
+    #validate per-user PSModulePath (it's not uncommon for installers to bork this value)
+    $perUserPSModuleDefault="$env:USERPROFILE\Documents\WindowsPowerShell\Modules"
+    if ($env:PSModulePath -notmatch [Regex]::Escape($perUserPSModuleDefault)) {
+        $exists = Get-ItemProperty 'HKCU:\Environment' 'PSModulePath' -ErrorAction SilentlyContinue
+        if (($exists -eq $null) -or ($exists.PSModulePath.Length -eq 0)) {
+            Write-Host
+            Write-Host "Warning: Per-User environment variable 'PSModulePath' not set.  Using synthesized value" -ForegroundColor Yellow
+            $env:PSModulePath = $env:PSModulePath + "$([System.IO.Path]::PathSeparator)$perUserPSModuleDefault"
+        }
+    }
+
+    #make sure Tls12 is enabled (using SystemDefault assumes .NET 4.7+ is installed)
+    if (([Net.ServicePointManager]::SecurityProtocol -ne [Net.SecurityProtocolType]::SystemDefault) -and
+        !([Net.SecurityProtocolType]::Tls12 -eq ([Net.ServicePointManager]::SecurityProtocol -band [Net.SecurityProtocolType]::Tls12))) {
+        Write-Host
+        Write-Host "Warning: Tls12 not enabled for powershell.  Attempting to enable." -ForegroundColor Yellow
+        #set for this session
+        [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+
+        #try to persist for future
+        try {
+            Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\.NetFramework\v4.0.30319' -Name 'SystemDefaultTlsVersions' -Value '1' -Type DWord
+            Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\.NetFramework\v4.0.30319' -Name 'SchUseStrongCrypto' -Value '1' -Type DWord
+            Set-ItemProperty -Path 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\.NetFramework\v4.0.30319' -Name 'SystemDefaultTlsVersions' -Value '1' -Type DWord
+            Set-ItemProperty -Path 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\.NetFramework\v4.0.30319' -Name 'SchUseStrongCrypto' -Value '1' -Type DWord
+
+            Write-Host "Enable Tls12 succeeded" -ForegroundColor Yellow
+        }
+        catch {
+            Write-Host "Enabling Tls12 permanently failed.  You may experience other related errors later." -ForegroundColor Red
+        }
+    }
+
+    #install/update NuGet provider if not already present
+    if ((-not (Get-PackageProvider -ListAvailable -Name NuGet)) -or
+        ((Get-PackageProvider -Name NuGet).version -lt 2.8.5.201 )) {
+        try {
+            Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Scope CurrentUser -Confirm:$False -Force
+        }
+        catch {
+            Write-Host "$_" -ForegroundColor Red
+            exit 1
+        }
+    }
+}
+
 #-- Change Notification
 function notifySettingsChanged {
     if (-not ("Win32.NativeMethods" -as [Type])) {

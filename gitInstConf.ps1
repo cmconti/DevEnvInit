@@ -4,6 +4,7 @@ Install/Update and configure choolately, git, and posh-git
 #>
 
 #Requires -Version 5.1
+#Requires -RunAsAdministrator
 
 #If (!(Get-module chocolateyInstaller )) {Import-Module C:\ProgramData\chocolatey\helpers\chocolateyInstaller.psm1}
 
@@ -33,6 +34,8 @@ if (@('Unrestricted', 'Bypass') -notcontains $pol) {
   }
 }
 
+prepForPSModule
+
 #Check env vars
 # Set default CONF_ variables here:
 
@@ -61,16 +64,16 @@ if (Test-Path "$PSScriptRoot\gitInstPersonal.ps1" ) { . "$PSScriptRoot\gitInstPe
 
 write-host ''
 Get-Variable | ? { $_.Name -match '^CONF_' } | % { "$($_.Name)=$($_.Value)" }
-write-host ''
 
-$install = Read-Host -Prompt "Are the above CONF_ variables correct (if not, edit '$PSScriptRoot\gitInstPersonal.cmd')? [y/n]"
+write-host ''
+$install = Read-Host -Prompt "Are the above CONF_ variables correct (if not, edit '$PSScriptRoot\gitInstPersonal.ps1')? [y/n]"
 if ( $install -notmatch "[yY]" ) {
   exit 1
 }
 
 #Chocolatey
 write-host 'Checking if chocolatey is installed...'
-if ($null -eq (Get-Command "choco.exe" -ErrorAction SilentlyContinue)l) {
+if ($null -eq (Get-Command "choco.exe" -ErrorAction SilentlyContinue)) {
   #ChocoInstall
   write-host 'Chocolatey is not installed.  Exiting.'
   exit 1
@@ -78,7 +81,6 @@ if ($null -eq (Get-Command "choco.exe" -ErrorAction SilentlyContinue)l) {
 
 #Git
 # see https://chocolatey.org/packages/git.install for all options
-$GIT_OPT = '"/GitOnlyOnPath /WindowsTerminal /NoShellIntegration /SChannel"'
 
 write-host ''
 write-host 'Checking if git is installed or out of date...'
@@ -86,7 +88,7 @@ $outOfDate = $null -ne (choco outdated | ? { $_ -match '^git.install\||^git\|' }
 $needToInstall = $outOfDate -or ($null -eq (Get-Command "git.exe" -ErrorAction SilentlyContinue))
 
 if ($needToInstall) {
-  $install = Read-Host -Prompt "Install/Upgrade Git in %ProgramFiles%\Git ? [y/n]"
+  $install = Read-Host -Prompt "Install/Upgrade Git in $($env:ProgramFiles)\Git ? [y/n]"
   if ( $install -match "[yY]" ) {
     #Validate that wish.exe is not running
     while ($null -ne (get-process "wish" -ea SilentlyContinue)) {
@@ -117,110 +119,109 @@ if ( $install -match "[yY]" ) {
   # Set some default git options
   git config --system diff.algorithm histogram
   git config --system difftool.prompt false
-  git config --system difftool.bc4.cmd '"c:/Program Files/Beyond Compare 4/bcomp.exe" "$LOCAL" "$REMOTE"'
-  git config --system difftool.bc4dir.cmd '"c:/Program Files/Beyond Compare 4/BCompare.exe" -ro -expandall -solo "$LOCAL" "$REMOTE"'
-  git config --system difftool.bc4diredit.cmd '"c:/Program Files/Beyond Compare 4/BCompare.exe" -lro -expandall -solo "$LOCAL" "$REMOTE"'
-  git config --system difftool.p4.cmd '"c:/Program files/Perforce/p4merge.exe" "$LOCAL" "$REMOTE"'
-  git config --system difftool.vs2012.cmd '"c:/Program files (x86)/microsoft visual studio 11.0/common7/ide/devenv.exe" '//diff' "$LOCAL" "$REMOTE"'
-  git config --system difftool.vs2013.cmd '"c:/Program files (x86)/microsoft visual studio 12.0/common7/ide/devenv.exe" '//diff' "$LOCAL" "$REMOTE"'
+  git config --system difftool.bc4.cmd '\"c:/Program Files/Beyond Compare 4/bcomp.exe\" \"$LOCAL\" \"$REMOTE\"'
+  git config --system difftool.bc4dir.cmd '\"c:/Program Files/Beyond Compare 4/BCompare.exe\" -ro -expandall -solo \"$LOCAL\" \"$REMOTE\"'
+  git config --system difftool.bc4diredit.cmd '\"c:/Program Files/Beyond Compare 4/BCompare.exe\" -lro -expandall -solo \"$LOCAL\" \"$REMOTE\"'
+  git config --system difftool.p4.cmd '\"c:/Program files/Perforce/p4merge.exe\" \"$LOCAL\" \"$REMOTE\"'
+  git config --system difftool.vs2012.cmd '\"c:/Program files (x86)/microsoft visual studio 11.0/common7/ide/devenv.exe\" ''//diff'' \"$LOCAL\" \"$REMOTE\"'
+  git config --system difftool.vs2013.cmd '\"c:/Program files (x86)/microsoft visual studio 12.0/common7/ide/devenv.exe\" ''//diff'' \"$LOCAL\" \"$REMOTE\"'
 
   git config --system mergetool.prompt false
   git config --system mergetool.keepbackup false
-  git config --system mergetool.bc3.cmd '"c:/program files (x86)/beyond compare 3/bcomp.exe" "$LOCAL" "$REMOTE" "$BASE" "$MERGED"'
-  git config --system mergetool.bc3.trustexitcode true
-  git config --system mergetool.p4.cmd '"c:/program files/Perforce/p4merge.exe" "$BASE" "$LOCAL" "$REMOTE" "$MERGED"'
+  git config --system mergetool.p4.cmd '\"c:/program files/Perforce/p4merge.exe\" \"$BASE\" \"$LOCAL\" \"$REMOTE\" \"$MERGED\"'
   git config --system mergetool.p4.trustexitcode false
 
-  git config --global --add safe.directory '*'
-  git config --global alias.diffdir "difftool --dir-diff --tool=bc4dir --no-prompt"
-  git config --global alias.diffdirsym "-c core.symlinks=true difftool --dir-diff --tool=bc4diredit --no-prompt"
+  if ($null -eq (git config --global --get-all safe.directory | ? {$_ -match '^\*$'})) {
+    git config --global --add safe.directory '*'
+  }
+  git config --global alias.diffdir 'difftool --dir-diff --tool=bc4dir --no-prompt'
+  git config --global alias.diffdirsym '-c core.symlinks=true difftool --dir-diff --tool=bc4diredit --no-prompt'
 }
 
+#GitConfigureDefaultUser
+if ($null -ne $CONF_GIT_DEFAULT_USER) {
+  write-host ''
+  $install = Read-Host -Prompt "[Re]Configure git with $CONF_GIT_DEFAULT_USER/$CONF_GIT_DEFAULT_EMAIL as the default user/email ? [y/n]"
+  if ( $install -match "[yY]" ) {
+    git config --global user.name $CONF_GIT_DEFAULT_USER
+    git config --global user.email $CONF_GIT_DEFAULT_EMAIL
+  }
+}
+
+#GitConfigureSecondaryUser
+if ($null -ne $CONF_GIT_SECONDARY_USER) {
+  write-host ''
+  write-host "If you have a path (CONF_GIT_SECONDARY_PATH=$CONF_GIT_SECONDARY_PATH) under which git credentials need to be different, you can set them here."
+  $install = Read-Host -Prompt "[Re]Configure git with $CONF_GIT_SECONDARY_USER/$CONF_GIT_SECONDARY_EMAIL as the secondary user/email for repos under $CONF_GIT_SECONDARY_PATH? [y/n]"
+  if ( $install -match "[yY]" ) {
+    # todo: don't override .gitconfig-secondary
+    &"$PSScriptRoot\support\UpdateINI.exe" -s user name $CONF_GIT_SECONDARY_USER "$($Env:USERPROFILE)\.gitconfig-secondary"
+    &"$PSScriptRoot\support\UpdateINI.exe" -s user email $CONF_GIT_SECONDARY_EMAIL "$($Env:USERPROFILE)\.gitconfig-secondary"
+    # convert crlf to lf
+    # $file="$($Env:USERPROFILE)\.gitconfig-secondary";$text = [IO.File]::ReadAllText($file) -replace '`r`n', '`n';[IO.File]::WriteAllText($file, $text)"
+    git config --global includeIf."gitdir:$CONF_GIT_SECONDARY_PATH".path ".gitconfig-secondary"
+  }
+}
+
+#GitConfigureDiff
+write-host ''
+$install = Read-Host -Prompt "[Re]Configure git with p4merge as merge/difftool ? [y/n]"
+if ( $install -match "[yY]" ) {
+  git config --global diff.tool p4
+  git config --global merge.tool p4
+  
+  # todo:  C:\Users\Admin\.config\git\gitk  update set extdifftool meld to set extdifftool p4merge- handle fresh install or missing setting
+  if (Test-Path "$($Env:USERPROFILE)\.config\git\gitk") {
+    $CurDate = [DateTime]::Now.ToString("yyyyMMddTHHmmss")
+    write-host "copy `"$($Env:USERPROFILE)\.config\git\gitk`" `"$($Env:USERPROFILE)\.config\git\gitk_$CurDate.bak`""
+    copy "$($Env:USERPROFILE)\.config\git\gitk" "$($Env:USERPROFILE)\.config\git\gitk_$CurDate.bak"
+  
+    $file = "$($Env:USERPROFILE)\.config\git\gitk"
+    (gc $file) -replace '^set extdifftool .*$', 'set extdifftool p4merge' -replace '^set diffcontext .*$', 'set diffcontext 6' | sc -Encoding ASCII $file
+  }  
+}
+
+#GitConfigureLogAndColor
+write-host ''
+$install = Read-Host -Prompt "[Re]Configure git with useful log alias and updated colors (improves readability of some dull-colored defaults) ? [y/n]"
+if ( $install -match "[yY]" ) {
+  # Git Log and color settings
+  git config --global alias.lg 'log --graph --pretty=format:''%C(red bold)%h%Creset -%C(yellow bold)%d%Creset %s%Cgreen(%cr) %C(cyan)<%an>%Creset'' --abbrev-commit --date=relative'
+  git config --global alias.lg2 'log --graph --pretty=format:''%C(red bold)%h%Creset -%C(blue bold)%d%Creset %s%Cgreen(%cr) %C(cyan)<%an>%Creset'''
+  git config --global alias.lg3 'log --graph --pretty=format:''%C(red bold)%h%Creset -%C(yellow bold)%d%Creset %s%C(cyan)<%an>%Creset'''
+  git config --global color.branch.remote 'red bold'
+  git config --global color.diff.new 'green bold'
+  git config --global color.diff.old 'red bold'
+  #status colors:
+  #see https://github.com/git/git/blob/master/wt-status.h, https://github.com/git/git/blob/master/wt-status.c, https://github.com/git/git/blob/master/builtin/commit.c
+  #WT_STATUS_UPDATED 'added' or 'updated'
+  git config --global color.status.added 'green bold'
+  #WT_STATUS_CHANGED
+  git config --global color.status.changed 'red bold'
+  #WT_STATUS_UNTRACKED
+  git config --global color.status.untracked 'red bold'
+  #WT_STATUS_NOBRANCH
+  git config --global color.status.nobranch 'red bold'
+  #WT_STATUS_UNMERGED
+  git config --global color.status.unmerged 'red bold'
+  #WT_STATUS_LOCAL_BRANCH
+  git config --global color.status.localBranch 'green bold'
+  #WT_STATUS_REMOTE_BRANCH
+  git config --global color.status.remoteBranch 'red bold'
+
+  # todo:  C:\Users\Admin\.config\git\gitk  update set permviews {} to set permviews {{{First Parent} {} --first-parent {}}}- handle fresh install or missing/different setting
+  if (Test-Path "$($Env:USERPROFILE)\.config\git\gitk") {
+    $CurDate = [DateTime]::Now.ToString("yyyyMMddTHHmmss")
+    write-host "copy `"$($Env:USERPROFILE)\.config\git\gitk`" `"$($Env:USERPROFILE)\.config\git\gitk_$CurDate.bak`""
+    copy "$($Env:USERPROFILE)\.config\git\gitk" "$($Env:USERPROFILE)\.config\git\gitk_$CurDate.bak"
+  
+    $file = "$($Env:USERPROFILE)\.config\git\gitk"
+    (gc $file) -replace '^set permviews {}$', 'set permviews {{{First Parent} {} --first-parent {}}}' | sc -Encoding ASCII $file
+  }
+}
+
+# skip certs/schannel/unconfigured items
 <#
-
-:GitConfigureDefaultUser
-if "%CONF_GIT_DEFAULT_USER%" EQU "" Goto :GitConfigureSecondaryUser
-write-host ''
-SET INSTALL_=
-set /p INSTALL_="[Re]Configure git with %CONF_GIT_DEFAULT_USER%/%CONF_GIT_DEFAULT_EMAIL% as the default user/email ? [y/n]"
-if /I "%INSTALL_:~0,1%" NEQ "y" Goto :GitConfigureSecondaryUser
-
-git config --global user.name "%CONF_GIT_DEFAULT_USER%"
-git config --global user.email %CONF_GIT_DEFAULT_EMAIL%
-
-:GitConfigureSecondaryUser
-if "%CONF_GIT_SECONDARY_USER%" EQU "" Goto :GitConfigureDiff
-write-host ''
-write-host if you have a path (CONF_GIT_SECONDARY_PATH=%CONF_GIT_SECONDARY_PATH%) under which git credentials need to be different, you can set them here.
-SET INSTALL_=
-set /p INSTALL_="[Re]Configure git with %CONF_GIT_SECONDARY_USER%/%CONF_GIT_SECONDARY_EMAIL% as the secondary user/email for repos under %CONF_GIT_SECONDARY_PATH%? [y/n]"
-if /I "%INSTALL_:~0,1%" NEQ "y" Goto GitConfigureDiff
-
-# todo: don't override .gitconfig-secondary
-UpdateINI -s user name "%CONF_GIT_SECONDARY_USER%" "%USERPROFILE%\.gitconfig-secondary"
-UpdateINI -s user email "%CONF_GIT_SECONDARY_EMAIL%" "%USERPROFILE%\.gitconfig-secondary"
-# convert crlf to lf
-# powershell "$file='%USERPROFILE%\.gitconfig-secondary';$text = [IO.File]::ReadAllText($file) -replace '`r`n', '`n';[IO.File]::WriteAllText($file, $text)"
-git config --global includeIf."gitdir:%CONF_GIT_SECONDARY_PATH%".path ".gitconfig-secondary"
-
-
-:GitConfigureDiff
-write-host ''
-SET INSTALL_=
-set /p INSTALL_="[Re]Configure git with p4merge as merge/difftool ? [y/n]"
-if /I "%INSTALL_:~0,1%" NEQ "y" Goto GitConfigureLogAndColor
-
-git config --global diff.tool p4
-git config --global merge.tool p4
-
-# todo:  C:\Users\Admin\.config\git\gitk  update set extdifftool meld to set extdifftool p4merge- handle fresh install or missing setting
-if exist "%USERPROFILE%\.config\git\gitk" (
-    FOR /f %%a in ('WMIC OS GET LocalDateTime ^| find "."') DO (set DTS=%%a&set CUR_DATE=!DTS:~0,8!T!DTS:~8,6!)
-    echo copy "%USERPROFILE%\.config\git\gitk" "%USERPROFILE%\.config\git\gitk_!CUR_DATE!.bak"
-    powershell "copy "%USERPROFILE%\.config\git\gitk" "%USERPROFILE%\.config\git\gitk_!CUR_DATE!.bak""
-
-    powershell "$file = '%USERPROFILE%\.config\git\gitk';(gc $file) -replace '^set extdifftool .*$','set extdifftool p4merge' -replace '^set diffcontext .*$','set diffcontext 6' | sc -Encoding ASCII $file
-)
-
-:GitConfigureLogAndColor
-write-host ''
-SET INSTALL_=
-set /p INSTALL_="[Re]Configure git with useful log alias and updated colors (improves readability of some dull-colored defaults) ? [y/n]"
-if /I "%INSTALL_:~0,1%" NEQ "y" Goto GitConfigureCerts
-
-# Git Log and color settings
-git config --global alias.lg "log --graph --pretty=format:'%%C(red bold)%%h%%Creset -%%C(yellow bold)%%d%%Creset %%s%%Cgreen(%%cr) %%C(cyan)<%%an>%%Creset' --abbrev-commit --date=relative"
-git config --global alias.lg2 "log --graph --pretty=format:'%%C(red bold)%%h%%Creset -%%C(blue bold)%%d%%Creset %%s%%Cgreen(%%cr) %%C(cyan)<%%an>%%Creset'"
-git config --global alias.lg3 "log --graph --pretty=format:'%%C(red bold)%%h%%Creset -%%C(yellow bold)%%d%%Creset %%s%%C(cyan)<%%an>%%Creset'"
-git config --global color.branch.remote "red bold"
-git config --global color.diff.new "green bold"
-git config --global color.diff.old "red bold"
-::status colors:
-::see https://github.com/git/git/blob/master/wt-status.h, https://github.com/git/git/blob/master/wt-status.c, https://github.com/git/git/blob/master/builtin/commit.c
-::WT_STATUS_UPDATED 'added' or 'updated'
-git config --global color.status.added "green bold"
-::WT_STATUS_CHANGED
-git config --global color.status.changed "red bold"
-::WT_STATUS_UNTRACKED
-git config --global color.status.untracked "red bold"
-::WT_STATUS_NOBRANCH
-git config --global color.status.nobranch "red bold"
-::WT_STATUS_UNMERGED
-git config --global color.status.unmerged "red bold"
-::WT_STATUS_LOCAL_BRANCH
-git config --global color.status.localBranch "green bold"
-::WT_STATUS_REMOTE_BRANCH
-git config --global color.status.remoteBranch "red bold"
-
-# todo:  C:\Users\Admin\.config\git\gitk  update set permviews {} to set permviews {{{First Parent} {} --first-parent {}}}- handle fresh install or missing/different setting
-if exist "%USERPROFILE%\.config\git\gitk" (
-    FOR /f %%a in ('WMIC OS GET LocalDateTime ^| find "."') DO (set DTS=%%a&set CUR_DATE=!DTS:~0,8!T!DTS:~8,6!)
-    echo copy "%USERPROFILE%\.config\git\gitk" "%USERPROFILE%\.config\git\gitk_!CUR_DATE!.bak"
-    powershell "copy "%USERPROFILE%\.config\git\gitk" "%USERPROFILE%\.config\git\gitk_!CUR_DATE!.bak""
-
-    powershell "$file = '%USERPROFILE%\.config\git\gitk';(gc $file) -replace '^set permviews {}$','set permviews {{{First Parent} {} --first-parent {}}}' | sc -Encoding ASCII $file
-)
-
 :GitConfigureCerts
 # skip reconfiguring certs.  Ass-u-me git is already configured for schannel
 goto GitPad
@@ -272,7 +273,10 @@ goto GitPad
 #     http.sslbackend=openssl                (default: )          TBD
 #     http.proxy=http://proxy.foo.com:8080   (default: n/a)       OK (set above)
 #     core.hidedotfiles=dotGitOnly           (default: dotGitOnly)   OK
+#>
 
+#GitPad - not necessary anymore?
+<#
 :GitPad
 # https://stackoverflow.com/questions/10564/how-can-i-set-up-an-editor-to-work-with-git-on-windows
 # as of git for windows 2.5.3, notepad can be used as the editor (see https://github.com/git-for-windows/git/releases/tag/v2.5.3.windows.1)
@@ -342,20 +346,40 @@ if /I "%INSTALL_:~0,1%" NEQ "y" Goto Posh-Git
 git config --system core.editor gitpad
 
 goto Posh-Git
+#>
 
-:NotepadAsEditor
-goto Posh-Git
+#NotepadAsEditor
 write-host ''
-SET INSTALL_=
-set /p INSTALL_="Configure Notepad as the git editor ? [y/n]"
-if /I "%INSTALL_:~0,1%" NEQ "y" Goto Posh-Git
-
-git config --system core.editor notepad
+$install = Read-Host -Prompt "Configure Notepad as the git editor ? [y/n]"
+if ( $install -match "[yY]" ) {
+  git config --system core.editor notepad
+}
 
 # todo:
 # notepad++ (git config --global core.editor "'C:/Program Files (x86)/Notepad++/notepad++.exe' -multiInst -notabbar -nosession -noPlugin")
-goto Posh-Git
 
+#Posh-Git
+$installedVer = (Get-InstalledModule posh-git -erroraction silentlycontinue).Version
+$availableVer = (Find-Module posh-git).Version
+
+$chocoposhInstalled = ($null -ne (choco list -lo | ? {$_ -match '^poshgit\b'}))
+
+if ($chocoposhInstalled){
+  write-host ''
+  $install = Read-Host -Prompt "Uninstall chocolatey version of posh-git ? [y/n]"
+  if ( $install -match "[yY]" ) {
+    choco Uninstall -y  posh-git
+  }  
+}
+
+if ($null -eq $installedVer) {
+  Install-Module posh-git -Scope CurrentUser -Repository PSGallery -Confirm:$False -Force
+}
+elseif ($installedVer -lt $availableVer) {
+  Update-Module posh-git -Scope CurrentUser -Repository PSGallery -Confirm:$False -Force
+}
+
+<#
 :Posh-Git
 
 choco outdated | find /i "poshgit|"
