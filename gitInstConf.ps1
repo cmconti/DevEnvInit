@@ -5,21 +5,15 @@ Install/Update and configure choolately, git, and posh-git
 
 #Requires -Version 5.1
 
+#If (!(Get-module chocolateyInstaller )) {Import-Module C:\ProgramData\chocolatey\helpers\chocolateyInstaller.psm1}
+
+#--- Local functions ---
+. "$PSScriptRoot\support\LocalInstallUtils.ps1"
+
 $HTTP_PROXY = $null
 $HTTPS_PROXY = $null
 
 #Check Admin
-function Test-AdminElevation {
-  <#
-.SYNOPSIS
-Determines if the console is elevated
-
-#>
-  $identity = [System.Security.Principal.WindowsIdentity]::GetCurrent()
-  $principal = New-Object System.Security.Principal.WindowsPrincipal( $identity )
-  return $principal.IsInRole( [System.Security.Principal.WindowsBuiltInRole]::Administrator )
-}
-
 if (!(Test-AdminElevation)) {
   write-host "must run as admin"
   exit 1
@@ -39,31 +33,8 @@ if (@('Unrestricted', 'Bypass') -notcontains $pol) {
   }
 }
 
-#--- Local functions ---
-. "$PSScriptRoot\support\LocalInstallUtils.ps1"
-
 #Check env vars
-# Set default value here.  If the variable exists, do not change.  If not, override in CONF_ section below
-$CONF_CHOCO_TOOLS = $env:ChocolateyToolsLocation
-# Special case:  ChocolateyToolsLocation is a user env var, not a system env var.
-#                if another user has already created C:\Bin\chocotools or C:\tools, use that base
-if ($null -eq $CONF_CHOCO_TOOLS) {
-  if (Test-Path C:\Bin\chocotools) {
-    $CONF_CHOCO_TOOLS = 'C:\Bin\chocotools'
-  }
-  else {
-    if (Test-Path  C:\tools) {
-      $CONF_CHOCO_TOOLS = 'C:\Tools'
-    }
-  }
-}
-
 # Set default CONF_ variables here:
-
-# only override CONF_CHOCO_TOOLS if chocolatey is not installed yet
-if ($null -eq $CONF_CHOCO_TOOLS) {
-  $CONF_CHOCO_TOOLS = 'C:\Tools'
-}
 
 # if http proxy is needed for git, set this variable
 # $CONF_GIT_PROXY='http://proxy.foo.com:8080'
@@ -99,92 +70,73 @@ if ( $install -notmatch "[yY]" ) {
 
 #Chocolatey
 write-host 'Checking if chocolatey is installed...'
-if ((Get-Command "choco.exe" -ErrorAction SilentlyContinue) -eq $null) {
+if ($null -eq (Get-Command "choco.exe" -ErrorAction SilentlyContinue)l) {
   #ChocoInstall
-  write-host 'Chocolatey is not installed.'
+  write-host 'Chocolatey is not installed.  Exiting.'
+  exit 1
+}
 
-  $install = Read-Host -Prompt "Install Chocolatey to $($env:ALLUSERSPROFILE)\chocolatey\bin ? [y/n]"
+#Git
+# see https://chocolatey.org/packages/git.install for all options
+$GIT_OPT = '"/GitOnlyOnPath /WindowsTerminal /NoShellIntegration /SChannel"'
+
+write-host ''
+write-host 'Checking if git is installed or out of date...'
+$outOfDate = $null -ne (choco outdated | ? { $_ -match '^git.install\||^git\|' })
+$needToInstall = $outOfDate -or ($null -eq (Get-Command "git.exe" -ErrorAction SilentlyContinue))
+
+if ($needToInstall) {
+  $install = Read-Host -Prompt "Install/Upgrade Git in %ProgramFiles%\Git ? [y/n]"
   if ( $install -match "[yY]" ) {
-    $env:ChocolateyToolsLocation = $CONF_CHOCO_TOOLS
-    #Proxy
-    #[System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
-    #No Proxy
-    iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+    #Validate that wish.exe is not running
+    while ($null -ne (get-process "wish" -ea SilentlyContinue)) {
+      Read-Host -Prompt "gitk is running...please close.  press return to continue."
+    }
 
-    # Add to current path
-    $env:Path += "$($env:ALLUSERSPROFILE)\chocolatey\bin"
+    #Validate that git.exe is not running
+    while ($null -ne (get-process "git" -ea SilentlyContinue)) {
+      Read-Host -Prompt "git is running...please close.  press return to continue."
+    }
 
-    if (-not(Test-Path $CONF_CHOCO_TOOLS)) { New-Item -ItemType Directory -Force -Path $CONF_CHOCO_TOOLS }
-    setx ChocolateyToolsLocation "%CONF_CHOCO_TOOLS%"
-
-    choco feature enable -n useRememberedArgumentsForUpgrades
+    choco upgrade -y git --params '"/GitOnlyOnPath /WindowsTerminal /NoShellIntegration /SChannel"'
   }
+  
+  # Add to current path
+  $env:Path += "$($env:ProgramFiles)\Git\cmd"
+}
+
+#GitConfigure
+if ($null -ne $CONF_GIT_PROXY) {
+  git config --global http.proxy $CONF_GIT_PROXY
+}
+
+write-host ''
+$install = Read-Host -Prompt "[Re]Configure git with github for windows defaults, (e.g. p4, beyond compare, and visual studio merge/diff parameters) ? [y/n]"
+if ( $install -match "[yY]" ) {
+
+  # Set some default git options
+  git config --system diff.algorithm histogram
+  git config --system difftool.prompt false
+  git config --system difftool.bc4.cmd '"c:/Program Files/Beyond Compare 4/bcomp.exe" "$LOCAL" "$REMOTE"'
+  git config --system difftool.bc4dir.cmd '"c:/Program Files/Beyond Compare 4/BCompare.exe" -ro -expandall -solo "$LOCAL" "$REMOTE"'
+  git config --system difftool.bc4diredit.cmd '"c:/Program Files/Beyond Compare 4/BCompare.exe" -lro -expandall -solo "$LOCAL" "$REMOTE"'
+  git config --system difftool.p4.cmd '"c:/Program files/Perforce/p4merge.exe" "$LOCAL" "$REMOTE"'
+  git config --system difftool.vs2012.cmd '"c:/Program files (x86)/microsoft visual studio 11.0/common7/ide/devenv.exe" '//diff' "$LOCAL" "$REMOTE"'
+  git config --system difftool.vs2013.cmd '"c:/Program files (x86)/microsoft visual studio 12.0/common7/ide/devenv.exe" '//diff' "$LOCAL" "$REMOTE"'
+
+  git config --system mergetool.prompt false
+  git config --system mergetool.keepbackup false
+  git config --system mergetool.bc3.cmd '"c:/program files (x86)/beyond compare 3/bcomp.exe" "$LOCAL" "$REMOTE" "$BASE" "$MERGED"'
+  git config --system mergetool.bc3.trustexitcode true
+  git config --system mergetool.p4.cmd '"c:/program files/Perforce/p4merge.exe" "$BASE" "$LOCAL" "$REMOTE" "$MERGED"'
+  git config --system mergetool.p4.trustexitcode false
+
+  git config --global --add safe.directory '*'
+  git config --global alias.diffdir "difftool --dir-diff --tool=bc4dir --no-prompt"
+  git config --global alias.diffdirsym "-c core.symlinks=true difftool --dir-diff --tool=bc4diredit --no-prompt"
 }
 
 <#
-
-:Git
-# see https://chocolatey.org/packages/git.install for all options
-SET GIT_OPT=/GitOnlyOnPath /WindowsTerminal /NoShellIntegration /SChannel
-
-write-host ''
-write-host Checking if git is installed...
-choco outdated | find /i "git.install|"
-if not errorlevel 1 (goto GitInstall)
-choco outdated | find /i "git|"
-if not errorlevel 1 (goto GitInstall)
-
-git --version > NUL
-if NOT ERRORLEVEL 1 GOTO GitConfigure
-
-:GitInstall
-write-host ''
-SET INSTALL_=
-set /p INSTALL_="Install/Upgrade Git in %ProgramFiles%\Git ? [y/n]"
-if /I "%INSTALL_:~0,1%" NEQ "y" Goto GitConfigure
-
-:retryWish
-tasklist /FI "IMAGENAME eq wish.exe" 2>NUL | find /I /N "wish.exe">NUL
-if "%ERRORLEVEL%"=="0" echo gitk is running...please close&pause&goto retryWish
-
-:retryGit
-tasklist /FI "IMAGENAME eq git.exe" 2>NUL | find /I /N "git.exe">NUL
-if "%ERRORLEVEL%"=="0" echo git is running...please close&pause&goto retryGit
-
-choco upgrade git --params="'%GIT_OPT%'" -y
-
-# Add to current path
-SET PATH=%PATH%;%ProgramFiles%\Git\cmd
-
-:GitConfigure
-if .%CONF_GIT_PROXY%. NEQ .. (
-  git config --global http.proxy %CONF_GIT_PROXY%
-)
-write-host ''
-SET INSTALL_=
-set /p INSTALL_="[Re]Configure git with github for windows defaults, (e.g. p4, beyond compare, and visual studio merge/diff parameters) ? [y/n]"
-if /I "%INSTALL_:~0,1%" NEQ "y" Goto GitConfigureDefaultUser
-
-# Set some default git options
-git config --system diff.algorithm histogram
-git config --system difftool.prompt false
-git config --system difftool.bc4.cmd "\"c:/Program Files/Beyond Compare 4/bcomp.exe\" \"$LOCAL\" \"$REMOTE\""
-git config --system difftool.bc4dir.cmd "\"c:/Program Files/Beyond Compare 4/BCompare.exe\" -ro -expandall -solo \"$LOCAL\" \"$REMOTE\""
-git config --system difftool.bc4diredit.cmd "\"c:/Program Files/Beyond Compare 4/BCompare.exe\" -lro -expandall -solo \"$LOCAL\" \"$REMOTE\""
-git config --system difftool.p4.cmd "\"c:/program files/Perforce/p4merge.exe\" \"$LOCAL\" \"$REMOTE\""
-git config --system difftool.vs2012.cmd "\"c:/program files (x86)/microsoft visual studio 11.0/common7/ide/devenv.exe\" '//diff' \"$LOCAL\" \"$REMOTE\""
-git config --system difftool.vs2013.cmd "\"c:/program files (x86)/microsoft visual studio 12.0/common7/ide/devenv.exe\" '//diff' \"$LOCAL\" \"$REMOTE\""
-
-git config --system mergetool.prompt false
-git config --system mergetool.keepbackup false
-git config --system mergetool.bc3.cmd "\"c:/program files (x86)/beyond compare 3/bcomp.exe\" \"$LOCAL\" \"$REMOTE\" \"$BASE\" \"$MERGED\""
-git config --system mergetool.bc3.trustexitcode true
-git config --system mergetool.p4.cmd "\"c:/program files/Perforce/p4merge.exe\" \"$BASE\" \"$LOCAL\" \"$REMOTE\" \"$MERGED\""
-git config --system mergetool.p4.trustexitcode false
-
-git config --global --add safe.directory '*'
-git config --global alias.diffdir "difftool --dir-diff --tool=bc4dir --no-prompt"
-git config --global alias.diffdirsym "-c core.symlinks=true difftool --dir-diff --tool=bc4diredit --no-prompt"
 
 :GitConfigureDefaultUser
 if "%CONF_GIT_DEFAULT_USER%" EQU "" Goto :GitConfigureSecondaryUser

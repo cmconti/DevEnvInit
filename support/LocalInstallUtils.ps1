@@ -1,3 +1,10 @@
+#Check if console is Admin-elavated
+function Test-AdminElevation {
+  $identity = [System.Security.Principal.WindowsIdentity]::GetCurrent()
+  $principal = New-Object System.Security.Principal.WindowsPrincipal( $identity )
+  return $principal.IsInRole( [System.Security.Principal.WindowsBuiltInRole]::Administrator )
+}
+
 #-- Change Notification
 function notifySettingsChanged {
     if (-not ("Win32.NativeMethods" -as [Type])) {
