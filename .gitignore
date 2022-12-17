@@ -255,3 +255,4 @@ paket-files/
 
 #secret files
 gitInstPersonal.cmd
+gitInstPersonal.ps1
