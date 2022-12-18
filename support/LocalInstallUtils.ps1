@@ -41,7 +41,7 @@ function prepForPSModule {
     }
 
     #install/update NuGet provider if not already present
-    if ((-not (Get-PackageProvider -ListAvailable -Name NuGet)) -or
+    if ((-not (Get-PackageProvider -ListAvailable -Name NuGet -ErrorAction SilentlyContinue)) -or
         ((Get-PackageProvider -Name NuGet).version -lt 2.8.5.201 )) {
         try {
             Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Scope CurrentUser -Confirm:$False -Force

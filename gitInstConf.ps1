@@ -6,8 +6,6 @@ Install/Update and configure choolately, git, and posh-git
 #Requires -Version 5.1
 #Requires -RunAsAdministrator
 
-#If (!(Get-module chocolateyInstaller )) {Import-Module C:\ProgramData\chocolatey\helpers\chocolateyInstaller.psm1}
-
 #--- Local functions ---
 . "$PSScriptRoot\support\LocalInstallUtils.ps1"
 
@@ -79,6 +77,8 @@ if ($null -eq (Get-Command "choco.exe" -ErrorAction SilentlyContinue)) {
   exit 1
 }
 
+If (!(Get-module chocolateyInstaller )) {Import-Module C:\ProgramData\chocolatey\helpers\chocolateyInstaller.psm1}
+
 #Git
 write-host ''
 write-host 'Checking if git is installed or out of date...'
@@ -101,9 +101,8 @@ if ($needToInstall) {
     # see https://chocolatey.org/packages/git.install for all options
     choco upgrade -y git --params '"/GitOnlyOnPath /WindowsTerminal /NoShellIntegration /SChannel"'
   }
-  
-  # Add to current path
-  $env:Path += "$env:ProgramFiles\Git\cmd"
+
+  update-sessionenvironment
 }
 
 #GitConfigure
@@ -116,19 +115,19 @@ $install = Read-Host -Prompt "[Re]Configure git with github for windows defaults
 if ( $install -match "[yY]" ) {
 
   # Set some default git options
-  git config --system diff.algorithm histogram
-  git config --system difftool.prompt false
-  git config --system difftool.bc4.cmd '\"c:/Program Files/Beyond Compare 4/bcomp.exe\" \"$LOCAL\" \"$REMOTE\"'
-  git config --system difftool.bc4dir.cmd '\"c:/Program Files/Beyond Compare 4/BCompare.exe\" -ro -expandall -solo \"$LOCAL\" \"$REMOTE\"'
-  git config --system difftool.bc4diredit.cmd '\"c:/Program Files/Beyond Compare 4/BCompare.exe\" -lro -expandall -solo \"$LOCAL\" \"$REMOTE\"'
-  git config --system difftool.p4.cmd '\"c:/Program files/Perforce/p4merge.exe\" \"$LOCAL\" \"$REMOTE\"'
-  git config --system difftool.vs2012.cmd '\"c:/Program files (x86)/microsoft visual studio 11.0/common7/ide/devenv.exe\" ''//diff'' \"$LOCAL\" \"$REMOTE\"'
-  git config --system difftool.vs2013.cmd '\"c:/Program files (x86)/microsoft visual studio 12.0/common7/ide/devenv.exe\" ''//diff'' \"$LOCAL\" \"$REMOTE\"'
+  git config --global diff.algorithm histogram
+  git config --global difftool.prompt false
+  git config --global difftool.bc4.cmd '\"c:/Program Files/Beyond Compare 4/bcomp.exe\" \"$LOCAL\" \"$REMOTE\"'
+  git config --global difftool.bc4dir.cmd '\"c:/Program Files/Beyond Compare 4/BCompare.exe\" -ro -expandall -solo \"$LOCAL\" \"$REMOTE\"'
+  git config --global difftool.bc4diredit.cmd '\"c:/Program Files/Beyond Compare 4/BCompare.exe\" -lro -expandall -solo \"$LOCAL\" \"$REMOTE\"'
+  git config --global difftool.p4.cmd '\"c:/Program files/Perforce/p4merge.exe\" \"$LOCAL\" \"$REMOTE\"'
+  git config --global difftool.vs2012.cmd '\"c:/Program files (x86)/microsoft visual studio 11.0/common7/ide/devenv.exe\" ''//diff'' \"$LOCAL\" \"$REMOTE\"'
+  git config --global difftool.vs2013.cmd '\"c:/Program files (x86)/microsoft visual studio 12.0/common7/ide/devenv.exe\" ''//diff'' \"$LOCAL\" \"$REMOTE\"'
 
-  git config --system mergetool.prompt false
-  git config --system mergetool.keepbackup false
-  git config --system mergetool.p4.cmd '\"c:/program files/Perforce/p4merge.exe\" \"$BASE\" \"$LOCAL\" \"$REMOTE\" \"$MERGED\"'
-  git config --system mergetool.p4.trustexitcode false
+  git config --global mergetool.prompt false
+  git config --global mergetool.keepbackup false
+  git config --global mergetool.p4.cmd '\"c:/program files/Perforce/p4merge.exe\" \"$BASE\" \"$LOCAL\" \"$REMOTE\" \"$MERGED\"'
+  git config --global mergetool.p4.trustexitcode false
 
   if ($null -eq (git config --global --get-all safe.directory | ? { $_ -match '^\*$' })) {
     git config --global --add safe.directory '*'
@@ -233,7 +232,7 @@ if /I "%INSTALL_:~0,1%" NEQ "y" Goto GitConfigureSChannel
 BundleWinCerts "C:\Program Files\Git\mingw64\ssl\certs\ca-bundle.crt" "C:\Program Files\Git\mingw64\ssl\certs\ca-bundle-plusWinRoot.crt"
 
 git config --global http.sslBackend openssl
-git config --system http.sslcainfo "C:/Program Files/Git/mingw64/ssl/certs/ca-bundle-plusWinRoot.crt"
+git config --global http.sslcainfo "C:/Program Files/Git/mingw64/ssl/certs/ca-bundle-plusWinRoot.crt"
 
 goto GitPad
 
@@ -342,7 +341,7 @@ if /I "%INSTALL_:~0,1%" NEQ "y" Goto Posh-Git
 
 
 :GitPadConfigure
-git config --system core.editor gitpad
+git config --global core.editor gitpad
 
 goto Posh-Git
 #>
@@ -351,7 +350,7 @@ goto Posh-Git
 write-host ''
 $install = Read-Host -Prompt "Configure Notepad as the git editor ? [y/n]"
 if ( $install -match "[yY]" ) {
-  git config --system core.editor notepad
+  git config --global core.editor notepad
 }
 
 # todo:
