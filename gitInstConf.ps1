@@ -426,7 +426,7 @@ if ( $install -match "[yY]" ) {
     "$PSScriptRoot\poshgit.ico" `
     $CONF_POSHGIT_STARTDIR
 
-    & "$PSScriptRoot\pscolor.ps1" $shortcutFile
+    & "$PSScriptRoot\support\pscolor.ps1" $shortcutFile
 
     copy $shortcutFile "$env:APPDATA\Microsoft\Internet Explorer\Quick Launch"
 
