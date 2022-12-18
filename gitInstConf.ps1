@@ -423,7 +423,7 @@ if ( $install -match "[yY]" ) {
   createShortcut $shortcutFile `
     '%WINDIR%\System32\WindowsPowershell\v1.0\Powershell.exe' `
     "-NoExit -ExecutionPolicy Unrestricted -File ""$poshgitConfigFile""" `
-    "$PSScriptRoot\poshgit.ico" `
+    "$PSScriptRoot\images\poshgit.ico" `
     $CONF_POSHGIT_STARTDIR
 
     & "$PSScriptRoot\support\pscolor.ps1" $shortcutFile
