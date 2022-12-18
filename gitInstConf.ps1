@@ -440,7 +440,7 @@ if ( $install -match "[yY]" ) {
 #     "name": "PoshGitShell",
 #     "commandline": "powershell.exe -NoExit -ExecutionPolicy Unrestricted -File \"C:\\Tools\\poshgit\\dahlbyk-posh-git-9bda399\\profile.example.ps1\" choco",
 #     "hidden": false,
-#     "icon" : "C:\\github-personal\\DevEnvInit\\poshgit.ico",
+#     "icon" : "C:\\github-personal\\DevEnvInit\\images\\poshgit.ico",
 #     "startingDirectory" : "C:\\github-personal",
 #     "colorScheme": "Campbell Powershell"
 # },
