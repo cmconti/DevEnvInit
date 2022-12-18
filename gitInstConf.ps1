@@ -445,6 +445,10 @@ if ( $install -match "[yY]" ) {
 write-host ''
 $install = Read-Host -Prompt "[Re]Create Posh-Git shell shortcut on desktop (select y if poshgit was upgraded)? [y/n]"
 if ( $install -match "[yY]" ) {
+  if (-not(Test-Path $CONF_POSHGIT_STARTDIR)) {
+    New-Item -ItemType Directory -Force -Path $CONF_POSHGIT_STARTDIR
+  }
+
   $shortcutFile = "$Home\Desktop\PoshGitShell.lnk"
   createShortcut $shortcutFile `
     '%WINDIR%\System32\WindowsPowershell\v1.0\Powershell.exe' `
