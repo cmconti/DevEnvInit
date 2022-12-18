@@ -80,15 +80,13 @@ if ($null -eq (Get-Command "choco.exe" -ErrorAction SilentlyContinue)) {
 }
 
 #Git
-# see https://chocolatey.org/packages/git.install for all options
-
 write-host ''
 write-host 'Checking if git is installed or out of date...'
 $outOfDate = $null -ne (choco outdated | ? { $_ -match '^git.install\||^git\|' })
 $needToInstall = $outOfDate -or ($null -eq (Get-Command "git.exe" -ErrorAction SilentlyContinue))
 
 if ($needToInstall) {
-  $install = Read-Host -Prompt "Install/Upgrade Git in $($env:ProgramFiles)\Git ? [y/n]"
+  $install = Read-Host -Prompt "Install/Upgrade Git in $env:ProgramFiles\Git ? [y/n]"
   if ( $install -match "[yY]" ) {
     #Validate that wish.exe is not running
     while ($null -ne (get-process "wish" -ea SilentlyContinue)) {
@@ -100,11 +98,12 @@ if ($needToInstall) {
       Read-Host -Prompt "git is running...please close.  press return to continue."
     }
 
+    # see https://chocolatey.org/packages/git.install for all options
     choco upgrade -y git --params '"/GitOnlyOnPath /WindowsTerminal /NoShellIntegration /SChannel"'
   }
   
   # Add to current path
-  $env:Path += "$($env:ProgramFiles)\Git\cmd"
+  $env:Path += "$env:ProgramFiles\Git\cmd"
 }
 
 #GitConfigure
@@ -131,7 +130,7 @@ if ( $install -match "[yY]" ) {
   git config --system mergetool.p4.cmd '\"c:/program files/Perforce/p4merge.exe\" \"$BASE\" \"$LOCAL\" \"$REMOTE\" \"$MERGED\"'
   git config --system mergetool.p4.trustexitcode false
 
-  if ($null -eq (git config --global --get-all safe.directory | ? {$_ -match '^\*$'})) {
+  if ($null -eq (git config --global --get-all safe.directory | ? { $_ -match '^\*$' })) {
     git config --global --add safe.directory '*'
   }
   git config --global alias.diffdir 'difftool --dir-diff --tool=bc4dir --no-prompt'
@@ -155,10 +154,10 @@ if ($null -ne $CONF_GIT_SECONDARY_USER) {
   $install = Read-Host -Prompt "[Re]Configure git with $CONF_GIT_SECONDARY_USER/$CONF_GIT_SECONDARY_EMAIL as the secondary user/email for repos under $CONF_GIT_SECONDARY_PATH? [y/n]"
   if ( $install -match "[yY]" ) {
     # todo: don't override .gitconfig-secondary
-    &"$PSScriptRoot\support\UpdateINI.exe" -s user name $CONF_GIT_SECONDARY_USER "$($Env:USERPROFILE)\.gitconfig-secondary"
-    &"$PSScriptRoot\support\UpdateINI.exe" -s user email $CONF_GIT_SECONDARY_EMAIL "$($Env:USERPROFILE)\.gitconfig-secondary"
+    &"$PSScriptRoot\support\UpdateINI.exe" -s user name $CONF_GIT_SECONDARY_USER "$env:USERPROFILE\.gitconfig-secondary"
+    &"$PSScriptRoot\support\UpdateINI.exe" -s user email $CONF_GIT_SECONDARY_EMAIL "$env:USERPROFILE\.gitconfig-secondary"
     # convert crlf to lf
-    # $file="$($Env:USERPROFILE)\.gitconfig-secondary";$text = [IO.File]::ReadAllText($file) -replace '`r`n', '`n';[IO.File]::WriteAllText($file, $text)"
+    # $file="$env:USERPROFILE\.gitconfig-secondary";$text = [IO.File]::ReadAllText($file) -replace '`r`n', '`n';[IO.File]::WriteAllText($file, $text)"
     git config --global includeIf."gitdir:$CONF_GIT_SECONDARY_PATH".path ".gitconfig-secondary"
   }
 }
@@ -171,12 +170,12 @@ if ( $install -match "[yY]" ) {
   git config --global merge.tool p4
   
   # todo:  C:\Users\Admin\.config\git\gitk  update set extdifftool meld to set extdifftool p4merge- handle fresh install or missing setting
-  if (Test-Path "$($Env:USERPROFILE)\.config\git\gitk") {
+  if (Test-Path "$env:USERPROFILE\.config\git\gitk") {
     $CurDate = [DateTime]::Now.ToString("yyyyMMddTHHmmss")
-    write-host "copy `"$($Env:USERPROFILE)\.config\git\gitk`" `"$($Env:USERPROFILE)\.config\git\gitk_$CurDate.bak`""
-    copy "$($Env:USERPROFILE)\.config\git\gitk" "$($Env:USERPROFILE)\.config\git\gitk_$CurDate.bak"
+    write-host "copy `"$env:USERPROFILE\.config\git\gitk`" `"$env:USERPROFILE\.config\git\gitk_$CurDate.bak`""
+    copy "$env:USERPROFILE\.config\git\gitk" "$env:USERPROFILE\.config\git\gitk_$CurDate.bak"
   
-    $file = "$($Env:USERPROFILE)\.config\git\gitk"
+    $file = "$env:USERPROFILE\.config\git\gitk"
     (gc $file) -replace '^set extdifftool .*$', 'set extdifftool p4merge' -replace '^set diffcontext .*$', 'set diffcontext 6' | sc -Encoding ASCII $file
   }  
 }
@@ -210,12 +209,12 @@ if ( $install -match "[yY]" ) {
   git config --global color.status.remoteBranch 'red bold'
 
   # todo:  C:\Users\Admin\.config\git\gitk  update set permviews {} to set permviews {{{First Parent} {} --first-parent {}}}- handle fresh install or missing/different setting
-  if (Test-Path "$($Env:USERPROFILE)\.config\git\gitk") {
+  if (Test-Path "$env:USERPROFILE\.config\git\gitk") {
     $CurDate = [DateTime]::Now.ToString("yyyyMMddTHHmmss")
-    write-host "copy `"$($Env:USERPROFILE)\.config\git\gitk`" `"$($Env:USERPROFILE)\.config\git\gitk_$CurDate.bak`""
-    copy "$($Env:USERPROFILE)\.config\git\gitk" "$($Env:USERPROFILE)\.config\git\gitk_$CurDate.bak"
+    write-host "copy `"$env:USERPROFILE\.config\git\gitk`" `"$env:USERPROFILE\.config\git\gitk_$CurDate.bak`""
+    copy "$env:USERPROFILE\.config\git\gitk" "$env:USERPROFILE\.config\git\gitk_$CurDate.bak"
   
-    $file = "$($Env:USERPROFILE)\.config\git\gitk"
+    $file = "$env:USERPROFILE\.config\git\gitk"
     (gc $file) -replace '^set permviews {}$', 'set permviews {{{First Parent} {} --first-parent {}}}' | sc -Encoding ASCII $file
   }
 }
@@ -362,9 +361,9 @@ if ( $install -match "[yY]" ) {
 $installedVer = (Get-InstalledModule posh-git -erroraction silentlycontinue).Version
 $availableVer = (Find-Module posh-git).Version
 
-$chocoposhInstalled = ($null -ne (choco list -lo | ? {$_ -match '^poshgit\b'}))
+$chocoPoshGitInstalled = ($null -ne (choco list -lo | ? { $_ -match '^poshgit\b' }))
 
-if ($chocoposhInstalled){
+if ($chocoPoshGitInstalled) {
   write-host ''
   $install = Read-Host -Prompt "Uninstall chocolatey version of posh-git ? [y/n]"
   if ( $install -match "[yY]" ) {
@@ -372,114 +371,67 @@ if ($chocoposhInstalled){
   }  
 }
 
-if ($null -eq $installedVer) {
-  Install-Module posh-git -Scope CurrentUser -Repository PSGallery -Confirm:$False -Force
+if (($null -eq $installedVer) -or ($installedVer -lt $availableVer)) {
+  write-host ''
+  $install = Read-Host -Prompt "Install/update posh-git ? [y/n]"
+  if ( $install -match "[yY]" ) {
+    if ($null -eq $installedVer) {
+      Install-Module posh-git -Scope CurrentUser -Repository PSGallery -Confirm:$False -Force
+    }
+    elseif ($installedVer -lt $availableVer) {
+      Update-Module posh-git -Scope CurrentUser -Repository PSGallery -Confirm:$False -Force
+    }
+  }
 }
-elseif ($installedVer -lt $availableVer) {
-  Update-Module posh-git -Scope CurrentUser -Repository PSGallery -Confirm:$False -Force
+
+# if (get-service 'ssh-agent'-ErrorAction SilentlyContinue){
+#   $svc = get-service 'ssh-agent'
+#   if ($svc.StartType -eq 'Disabled') {
+#     Set-Service ssh-agent -StartupType Manual
+#   }
+#   git config --global core.sshcommand "C:/Windows/System32/OpenSSH/ssh.exe"
+# }
+
+#Posh-GitConfigure
+$poshgitConfigFile = 'C:\bin\PoshGitInit.ps1'
+if (-not(Test-Path $poshgitConfigFile)) {
+  New-Item -ItemType Directory -Force -Path 'C:\bin'
+  'Import-Module posh-git' | sc $poshgitConfigFile
 }
 
-<#
-:Posh-Git
+#append line to file if not found
+function append-line($file, $line) {
+  $fc = gc $file
+  If (-not (sls -Path $file -SimpleMatch $line -Quiet)) {
+    Add-Content $file $line
+  }
+}
 
-choco outdated | find /i "poshgit|"
-if not errorlevel 1 (goto Posh-GitInstall)
-
-powershell -ExecutionPolicy Unrestricted -Command "if (test-path '%CONF_CHOCO_TOOLS%\poshgit\dahlbyk-posh-git-*\profile.example.ps1'){exit 1}"
-if ERRORLEVEL 1 Goto Posh-GitConfigure
-
-:Posh-GitInstall
 write-host ''
-SET INSTALL_=
-set /p INSTALL_="Install Posh-Git to %CONF_CHOCO_TOOLS%\poshgit (close any running instances if upgrade is needed)? [y/n]"
-if /I "%INSTALL_:~0,1%" NEQ "y" Goto Posh-GitConfigure
+$install = Read-Host -Prompt "[Re]Configure Posh-Git colors (improves readability of some dull-colored defaults) ? [y/n]"
+if ( $install -match "[yY]" ) {
+  append-line $poshgitConfigFile '$GitPromptSettings.LocalDefaultStatusSymbol.ForegroundColor = [ConsoleColor]::Red'
+  append-line $poshgitConfigFile '$GitPromptSettings.WorkingColor.ForegroundColor = [ConsoleColor]::Red' 'WorkingColor.ForegroundColor'
+  #append-line $poshgitConfigFile '$env:LC_ALL=''C.UTF-8'''
+}
 
-# get  current profile (if any)
-SET PROF_EXISTS=0
-if EXIST "%USERPROFILE%\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1" (
-  SET PROF_EXISTS=1
-) ELSE (
- copy "%USERPROFILE%\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1" "%USERPROFILE%\Documents\WindowsPowerShell\tmp Microsoft.PowerShell_profile.ps1"
-)
-choco upgrade poshgit -y
-
-powershell -ExecutionPolicy Unrestricted -Command "if (get-service 'ssh-agent'-ErrorAction SilentlyContinue){$svc = get-service 'ssh-agent'; if ($svc.StartType -eq 'Disabled'){Set-Service ssh-agent -StartupType Manual}; git config --global core.sshcommand "C:/Windows/System32/OpenSSH/ssh.exe"}"
-
-Goto Posh-GitConfigure
-
-:Posh-GitConfigure
+#Shortcut
 write-host ''
-SET INSTALL_=
-set /p INSTALL_="[Re]Configure Posh-Git colors (improves readability of some dull-colored defaults) ? [y/n]"
-if /I "%INSTALL_:~0,1%" NEQ "y" Goto Shortcut
+$install = Read-Host -Prompt "[Re]Create Posh-Git shell shortcut on desktop (select y if poshgit was upgraded)? [y/n]"
+if ( $install -match "[yY]" ) {
+  $shortcutFile = "$Home\Desktop\PoshGitShell.lnk"
+  createShortcut $shortcutFile `
+    '%WINDIR%\System32\WindowsPowershell\v1.0\Powershell.exe' `
+    "-NoExit -ExecutionPolicy Unrestricted -File ""$poshgitConfigFile""" `
+    "$PSScriptRoot\poshgit.ico" `
+    $CONF_POSHGIT_STARTDIR
 
-# restore previous profile/delete
-if "%PROF_EXISTS%" EQU "0" (
-  DEL "%USERPROFILE%\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1"
-) ELSE (
-  DEL "%USERPROFILE%\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1"
-  ren "%USERPROFILE%\Documents\WindowsPowerShell\tmpMicrosoft.PowerShell_profile.ps1" "Microsoft.PowerShell_profile.ps1"
-)
+    & "$PSScriptRoot\pscolor.ps1" $shortcutFile
 
-# tweak some posh-git prompt colors to improve readaility (IMHO)
-> "$PSScriptRoot\tmpCustomInstall.ps1" (
-write-host function insert-line($file, $line, $match, $after^) {
-write-host     $fc = gc $file
-write-host     If (-not (sls -Path $file -Pattern $match -Quiet^)^) {
-write-host         $idx=($fc^|sls $after^).LineNumber
-write-host         $newfc=@(^)
-write-host         0..($fc.Count-1^)^|%%{
-write-host             if ($_ -eq $idx^){
-write-host                 $newfc +=$line
-write-host             }
-write-host             $newfc += $fc[$_]
-write-host         }
-write-host         $newfc ^| out-file $file
-write-host     }
-write-host }
-write-host $file = (gci '%CONF_CHOCO_TOOLS%\poshgit\dahlbyk-posh-git*\profile.example.ps1'^).FullName;
-write-host insert-line $file '$Global:GitPromptSettings.LocalWorkingStatusForegroundColor  = [ConsoleColor]::Red' 'LocalWorkingStatusForegroundColor' 'GitPromptSettings.BranchBehindAndAheadDisplay';
-write-host insert-line $file '$Global:GitPromptSettings.WorkingForegroundColor  = [ConsoleColor]::Red' 'WorkingForegroundColor' 'GitPromptSettings.LocalWorkingStatusForegroundColor';
-write-host #insert-line $file '$env:LC_ALL=''C.UTF-8''' 'LC_ALL' 'GitPromptSettings.WorkingForegroundColor';
-)
+    copy $shortcutFile "$env:APPDATA\Microsoft\Internet Explorer\Quick Launch"
 
-powershell -ExecutionPolicy Unrestricted -Command "& '$PSScriptRoot\tmpCustomInstall.ps1'"
-del "$PSScriptRoot\tmpCustomInstall.ps1"
-
-Goto Shortcut
-
-# create powershell shortcut on desktop pointing to install path
-:Shortcut
-
-# if exist "%USERPROFILE%\Desktop\PoshGitShell.lnk" Goto Done
-write-host ''
-SET INSTALL_=
-set /p INSTALL_="[Re]Create Posh-Git shell shortcut on desktop (select y if poshgit was upgraded)? [y/n]"
-if /I "%INSTALL_:~0,1%" NEQ "y" Goto Done
-
-md %CONF_POSHGIT_STARTDIR%
-
-> "$PSScriptRoot\tmpCustomInstall.ps1" (
-write-host $Home
-write-host $file = (gci '%CONF_CHOCO_TOOLS%\poshgit\dahlbyk-posh-git*\profile.example.ps1'^).FullName;
-write-host $WshShell = New-Object -comObject WScript.Shell
-write-host $Shortcut = $WshShell.CreateShortcut("$Home\Desktop\PoshGitShell.lnk"^)
-write-host $Shortcut.TargetPath = '%WINDIR%\System32\WindowsPowershell\v1.0\Powershell.exe'
-write-host $Shortcut.Arguments = "-NoExit -ExecutionPolicy Unrestricted -File ""$file"" choco"
-write-host $Shortcut.IconLocation = "$PSScriptRoot\poshgit.ico"
-write-host $Shortcut.WorkingDirectory = '%CONF_POSHGIT_STARTDIR%'
-write-host $Shortcut.Save(^)
-)
-
-powershell -ExecutionPolicy Unrestricted -Command "& '$PSScriptRoot\tmpCustomInstall.ps1'"
-del "$PSScriptRoot\tmpCustomInstall.ps1"
-
-powershell -ExecutionPolicy Unrestricted -Command "& '$PSScriptRoot\pscolor.ps1' '%USERPROFILE%\Desktop\PoshGitShell.lnk'"
-
-copy "%USERPROFILE%\Desktop\PoshGitShell.lnk" "%APPDATA%\Microsoft\Internet Explorer\Quick Launch"
-# todo admin poshgitshell (and update profile.example.ps1?)
-# C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoExit -ExecutionPolicy Unrestricted -Command "cd c:\github-personal; C:\Tools\poshgit\dahlbyk-posh-git-9bda399\profile.example.ps1 choco"
-Goto Done
+    # todo admin poshgitshell
+}
 
 # todo: add this:
 # {
@@ -494,32 +446,3 @@ Goto Done
 # },
 # to %LOCALAPPDATA%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json
 # while retaining comments (and whitespace?)
-
-::UtilityFunctions
-
-:broadcastSettingsChange
-> "$PSScriptRoot\tmpCustomInstall.ps1" (
-write-host if (-not ("Win32.NativeMethods" -as [Type]^)^) {
-write-host Add-Type -Namespace Win32 -Name NativeMethods -MemberDefinition @"
-write-host [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto^)]
-write-host public static extern IntPtr SendMessageTimeout(
-write-host     IntPtr hWnd, uint Msg, UIntPtr wParam, string lParam,
-write-host     uint fuFlags, uint uTimeout, out UIntPtr lpdwResult^);
-write-host "@
-write-host }
-write-host $HWND_BROADCAST = [IntPtr] 0xffff;
-write-host $WM_SETTINGCHANGE = 0x1a;
-write-host $result = [UIntPtr]::Zero
-write-host [Win32.Nativemethods]::SendMessageTimeout($HWND_BROADCAST, $WM_SETTINGCHANGE, [UIntPtr]::Zero, 'Environment', 2, 5000, [ref] $result^);
-)
-
-powershell -ExecutionPolicy Unrestricted -Command "& '$PSScriptRoot\tmpCustomInstall.ps1'" >nul
-del "$PSScriptRoot\tmpCustomInstall.ps1"
-goto :eof
-
-:Done
-write-host ''
-write-host Done
-
-ENDLOCAL
-#>
