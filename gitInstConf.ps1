@@ -167,16 +167,30 @@ $install = Read-Host -Prompt "[Re]Configure git with p4merge as merge/difftool ?
 if ( $install -match "[yY]" ) {
   git config --global diff.tool p4
   git config --global merge.tool p4
-  
-  # todo:  C:\Users\Admin\.config\git\gitk  update set extdifftool meld to set extdifftool p4merge- handle fresh install or missing setting
-  if (Test-Path "$env:USERPROFILE\.config\git\gitk") {
+
+  $gitkConfigDir = "$env:USERPROFILE\.config\git"
+  $gitkConfigFile = "$gitkConfigDir\gitk"
+
+  if (-not(Test-Path $gitkConfigDir)) {
+    New-Item -ItemType Directory -Force -Path $gitkConfigDir
+  }
+
+  if (Test-Path $gitkConfigFile) {
     $CurDate = [DateTime]::Now.ToString("yyyyMMddTHHmmss")
-    write-host "copy `"$env:USERPROFILE\.config\git\gitk`" `"$env:USERPROFILE\.config\git\gitk_$CurDate.bak`""
-    copy "$env:USERPROFILE\.config\git\gitk" "$env:USERPROFILE\.config\git\gitk_$CurDate.bak"
-  
-    $file = "$env:USERPROFILE\.config\git\gitk"
+    $gitkConfigBackupFile = "$gitkConfigDir\gitk_$CurDate.bak"
+    write-host "copy `"$gitkConfigFile`" `"$gitkConfigBackupFile`""
+    copy $gitkConfigFile $gitkConfigBackupFile
+
+    $file = $gitkConfigFile
     (gc $file) -replace '^set extdifftool .*$', 'set extdifftool p4merge' -replace '^set diffcontext .*$', 'set diffcontext 6' | sc -Encoding ASCII $file
-  }  
+
+    if ((Get-FileHash $gitkConfigFile).hash -eq (Get-FileHash $gitkConfigBackupFile).hash) {
+      del $gitkConfigBackupFile
+    }
+  }
+  else {
+    copy "$PSScriptRoot\support\gitk" $gitkConfigDir
+  }
 }
 
 #GitConfigureLogAndColor
@@ -207,14 +221,28 @@ if ( $install -match "[yY]" ) {
   #WT_STATUS_REMOTE_BRANCH
   git config --global color.status.remoteBranch 'red bold'
 
-  # todo:  C:\Users\Admin\.config\git\gitk  update set permviews {} to set permviews {{{First Parent} {} --first-parent {}}}- handle fresh install or missing/different setting
-  if (Test-Path "$env:USERPROFILE\.config\git\gitk") {
+  $gitkConfigDir = "$env:USERPROFILE\.config\git"
+  $gitkConfigFile = "$gitkConfigDir\gitk"
+
+  if (-not(Test-Path $gitkConfigDir)) {
+    New-Item -ItemType Directory -Force -Path $gitkConfigDir
+  }
+
+  if (Test-Path $gitkConfigFile) {
     $CurDate = [DateTime]::Now.ToString("yyyyMMddTHHmmss")
-    write-host "copy `"$env:USERPROFILE\.config\git\gitk`" `"$env:USERPROFILE\.config\git\gitk_$CurDate.bak`""
-    copy "$env:USERPROFILE\.config\git\gitk" "$env:USERPROFILE\.config\git\gitk_$CurDate.bak"
-  
-    $file = "$env:USERPROFILE\.config\git\gitk"
+    $gitkConfigBackupFile = "$gitkConfigDir\gitk_$CurDate.bak"
+    write-host "copy `"$gitkConfigFile`" `"$gitkConfigBackupFile`""
+    copy $gitkConfigFile $gitkConfigBackupFile
+
+    $file = $gitkConfigFile
     (gc $file) -replace '^set permviews {}$', 'set permviews {{{First Parent} {} --first-parent {}}}' | sc -Encoding ASCII $file
+
+    if ((Get-FileHash $gitkConfigFile).hash -eq (Get-FileHash $gitkConfigBackupFile).hash) {
+      del $gitkConfigBackupFile
+    }
+  }
+  else {
+    copy "$PSScriptRoot\support\gitk" $gitkConfigDir
   }
 }
 
@@ -367,7 +395,7 @@ if ($chocoPoshGitInstalled) {
   $install = Read-Host -Prompt "Uninstall chocolatey version of posh-git ? [y/n]"
   if ( $install -match "[yY]" ) {
     choco Uninstall -y  posh-git
-  }  
+  }
 }
 
 if (($null -eq $installedVer) -or ($installedVer -lt $availableVer)) {
@@ -398,9 +426,8 @@ if (-not(Test-Path $poshgitConfigFile)) {
   'Import-Module posh-git' | sc $poshgitConfigFile
 }
 
-#append line to file if not found
-function append-line($file, $line) {
-  $fc = gc $file
+#append line to file if line not found
+function Add-MissingLine($file, $line) {
   If (-not (sls -Path $file -SimpleMatch $line -Quiet)) {
     Add-Content $file $line
   }
@@ -409,9 +436,9 @@ function append-line($file, $line) {
 write-host ''
 $install = Read-Host -Prompt "[Re]Configure Posh-Git colors (improves readability of some dull-colored defaults) ? [y/n]"
 if ( $install -match "[yY]" ) {
-  append-line $poshgitConfigFile '$GitPromptSettings.LocalDefaultStatusSymbol.ForegroundColor = [ConsoleColor]::Red'
-  append-line $poshgitConfigFile '$GitPromptSettings.WorkingColor.ForegroundColor = [ConsoleColor]::Red' 'WorkingColor.ForegroundColor'
-  #append-line $poshgitConfigFile '$env:LC_ALL=''C.UTF-8'''
+  Add-MissingLine $poshgitConfigFile '$GitPromptSettings.LocalDefaultStatusSymbol.ForegroundColor = [ConsoleColor]::Red'
+  Add-MissingLine $poshgitConfigFile '$GitPromptSettings.WorkingColor.ForegroundColor = [ConsoleColor]::Red' 'WorkingColor.ForegroundColor'
+  #Add-MissingLine $poshgitConfigFile '$env:LC_ALL=''C.UTF-8'''
 }
 
 #Shortcut
