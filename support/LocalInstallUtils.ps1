@@ -57,7 +57,8 @@ function prepForPSModule {
 function notifySettingsChanged {
     if (-not ("Win32.NativeMethods" -as [Type])) {
         Add-Type @"
-using System;using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Runtime.InteropServices;
 namespace Win32
