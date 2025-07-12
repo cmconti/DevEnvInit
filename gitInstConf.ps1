@@ -433,12 +433,40 @@ function Add-MissingLine($file, $line) {
   }
 }
 
+function Add-MissingBlock($file, $line, $block) {
+  If (-not (sls -Path $file -SimpleMatch $line -Quiet)) {
+    Add-Content $file $block
+  }
+}
+
 write-host ''
 $install = Read-Host -Prompt "[Re]Configure Posh-Git colors (improves readability of some dull-colored defaults) ? [y/n]"
 if ( $install -match "[yY]" ) {
   Add-MissingLine $poshgitConfigFile '$GitPromptSettings.LocalDefaultStatusSymbol.ForegroundColor = [ConsoleColor]::Red'
   Add-MissingLine $poshgitConfigFile '$GitPromptSettings.WorkingColor.ForegroundColor = [ConsoleColor]::Red' 'WorkingColor.ForegroundColor'
   #Add-MissingLine $poshgitConfigFile '$env:LC_ALL=''C.UTF-8'''
+}
+
+write-host ''
+$install = Read-Host -Prompt "Restore working dir in windows terminal ? [y/n]"
+if ( $install -match "[yY]" ) {
+  # see https://learn.microsoft.com/en-us/windows/terminal/tutorials/new-tab-same-directory#configure-your-shell
+  Add-MissingBlock $poshgitConfigFile 'function prompt' @'
+function prompt
+{
+  $loc = Get-Location
+
+  $prompt = & $GitPromptScriptBlock
+
+  $prompt += "$([char]27)]9;12$([char]7)"
+  if ($loc.Provider.Name -eq "FileSystem")
+  {
+    $prompt += "$([char]27)]9;9;`"$($loc.ProviderPath)`"$([char]27)\"
+  }
+
+  $prompt
+}
+'@
 }
 
 #Shortcut
